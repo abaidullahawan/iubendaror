@@ -1,0 +1,59 @@
+def find_clause_text(clauses, clauses_ids)
+  section_text = []
+  clauses_ids.each do |clauses_id|
+    section_text << clauses.map{|x| x[:text]   if x[:id] == clauses_id }.compact
+  end
+  section_text.join(';')
+end
+
+def parse_template(clauses:, sections:, template:)
+  clauses.each do |clause|
+    template = template.gsub("[CLAUSE-#{clause[:id]}]", clause[:text])
+  end
+
+  sections.each do |section|
+    if template.include? "SECTION-#{section[:id]}"
+      clauses_ids = section[:clauses_ids]
+      section_text = find_clause_text(clauses, clauses_ids)
+      template = template.gsub("[SECTION-#{section[:id]}]", section_text)
+    end
+  end
+  template
+end
+
+puts parse_template(
+  clauses: [
+    { 'id': 1, 'text': 'The quick brown fox' },
+    { 'id': 2, 'text': 'jumps over the lazy dog' },
+    { 'id': 3, 'text': 'And dies' },
+    { 'id': 4, 'text': 'The white horse is white' }],
+  sections: [
+    { 'id': 1, 'clauses_ids': [1, 2, 3] }, { 'id': 2, 'clauses_ids': [4,4]}],
+  template:
+    "A T&C Document
+    This document is made of plaintext.
+    Is made of [CLAUSE-3].
+    Is made of [CLAUSE-4].
+    Is made of [SECTION-2].
+    Your legals."
+)
+
+p '------------------------------------------'
+
+puts parse_template(
+  clauses:  [
+    { 'id': 1, 'text': 'The quick brown fox' },
+    { 'id': 2, 'text': 'jumps over the lazy dog' },
+    { 'id': 3, 'text': 'And dies' },
+    { 'id': 4, 'text': 'The white horse is white' }],
+  sections: [
+    { 'id': 1, 'clauses_ids': [2,4,4,1] }, { 'id': 2, 'clauses_ids': [4,4]}],
+  template:
+    "A T&C Document
+    This document is made of plaintext.
+    Is made of [SECTION-2].
+    Is made of [CLAUSE-2].
+    Is made of [CLAUSE-3].
+    Is made of [SECTION-1].
+    Your legals."
+)
